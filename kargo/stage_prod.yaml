@@ -1,0 +1,81 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: kargo-simple
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: guestbook
+    sources:
+      stages:
+      - staging
+  promotionTemplate:
+    spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/sdutta9/kargo-checkout
+      - name: imageRepo
+        value: ghcr.io/sdutta9/guestbook
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          checkout:
+          - branch: main
+            path: ./src
+          - branch: env/prod
+            create: true
+            path: ./out
+      - uses: git-clear
+        config:
+          path: ./out
+      - uses: kustomize-set-image
+        as: update-image
+        config:
+          path: ./src/app/env/prod
+          images:
+          - image: ${{ vars.imageRepo }}
+            tag: ${{ imageFrom(vars.imageRepo).Tag }}
+      - uses: kustomize-build
+        config:
+          path: ./src/app/env/prod
+          outPath: ./out/manifests.yaml
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./out
+          message: ${{ outputs['update-image'].commitMessage }}
+      # Add Pull request workflow for Prod branch   
+      # 1. PUSH TO A DYNAMIC FEATURE BRANCH
+      - uses: git-push
+        as: push-step
+        config:
+          path: ./out
+          generateTargetBranch: true # Instructs Kargo to create a unique temporary branch
+
+      # 2. OPEN A GITHUB PULL REQUEST
+      - uses: git-open-pr
+        as: open-pr-step
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          sourceBranch: ${{ outputs['push-step'].branch }} # Grabs the dynamic branch name from above
+          targetBranch: env/prod                          # Your target destination branch
+          title: "🤖 Kargo: Promote guestbook to production"
+          description: "Automated Kargo promotion. Changes compiled via Kustomize."
+
+      # 3. BLOCK KARGO PIPELINE UNTIL HUMAN MERGES THE PR
+      - uses: git-wait-for-pr
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          prNumber: ${{ outputs['open-pr-step'].pr.id }}  # Feeds the PR ID dynamically to the waiter
+
+      # 4. TELL ARGO CD TO SYNC ONLY AFTER MERGE HAPPENS
+      - uses: argocd-update
+        config:
+          apps:
+          - name: guestbook-simple-prod
+            sources:
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: env/prod # Point directly to the target tracking branch now

@@ -1,0 +1,72 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: dev
+  namespace: kargo-simple
+  annotations:
+    kargo.akuity.io/color: red
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: guestbook
+    sources:
+      direct: true
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/${GITHUB_USER}/${GITHUB_REPO}
+      writeBranch: main
+      kustomize:
+        images:
+        - image: ghcr.io/${GITHUB_USER}/guestbook
+          path: app/env/dev
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: staging
+  namespace: kargo-simple
+  annotations:
+    kargo.akuity.io/color: amber
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: guestbook
+    sources:
+      stages:
+      - dev
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/${GITHUB_USER}/${GITHUB_REPO}
+      writeBranch: main
+      kustomize:
+        images:
+        - image: ghcr.io/${GITHUB_USER}/guestbook
+          path: app/env/staging
+      pullRequest: {}
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: kargo-simple
+  annotations:
+    kargo.akuity.io/color: violet
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: guestbook
+    sources:
+      stages:
+      - staging
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/${GITHUB_USER}/${GITHUB_REPO}
+      writeBranch: main
+      kustomize:
+        images:
+        - image: ghcr.io/${GITHUB_USER}/guestbook
+          path: app/env/prod
+      pullRequest: {}

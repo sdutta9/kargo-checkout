@@ -7,4 +7,5 @@ spec:
   subscriptions:
   - image:
       repoURL: ghcr.io/sdutta9/guestbook
-      discoveryLimit: 5
+      tagSelectionStrategy: SemVer
+      # discoveryLimit: 5

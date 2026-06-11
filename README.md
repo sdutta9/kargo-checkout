@@ -70,8 +70,6 @@ While lower environments (dev and staging) are configured for continuous, automa
 
 ## Design Decisions
 
-- **Tradeoff - Increased Lead Time:** Introducing a manual PR review slows down the absolute speed of deployment to production compared to the fully automated lower environments.
-
 - **Security & Compliance:** Enforcing a PR approval process for production changes satisfies standard enterprise compliance frameworks (such as SOC2) by guaranteeing separation of duties and mandatory peer review before production state mutation.
 
 - **Developer Experience:** By automating the creation of the branch and the PR itself, the pipeline removes the manual toil usually associated with GitOps PR workflows, leaving only the high-value task (the actual review and merge) to the engineering team.

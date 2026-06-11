@@ -9,4 +9,4 @@ namespace: guestbook-simple-prod
 images:
 - name: ghcr.io/sdutta9/guestbook
   newName: ghcr.io/sdutta9/guestbook
-  newTag: v0.0.1
+  newTag: v0.0.3

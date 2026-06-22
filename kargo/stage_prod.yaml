@@ -66,13 +66,17 @@ spec:
           description: "Automated Kargo promotion. Changes compiled via Kustomize."
 
       # 3. BLOCK KARGO PIPELINE UNTIL HUMAN MERGES THE PR
-      - uses: git-wait-for-pr
+      # ADD THE CONDITIONAL CHECK HERE
+      - if: ${{ status('open-pr-step') != 'Skipped' }}
+        uses: git-wait-for-pr
         config:
           repoURL: ${{ vars.gitRepo }}
           prNumber: ${{ outputs['open-pr-step'].pr.id }}  # Feeds the PR ID dynamically to the waiter
 
       # 4. TELL ARGO CD TO SYNC ONLY AFTER MERGE HAPPENS
-      - uses: argocd-update
+      # ADD IT HERE AS WELL TO PREVENT UNNECESSARY SYNCS
+      - if: ${{ status('open-pr-step') != 'Skipped' }}
+        uses: argocd-update
         config:
           apps:
           - name: guestbook-simple-prod

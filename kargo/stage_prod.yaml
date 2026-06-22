@@ -69,6 +69,7 @@ spec:
       # ADD THE CONDITIONAL CHECK HERE
       - if: ${{ status('open-pr-step') != 'Skipped' }}
         uses: git-wait-for-pr
+        as: wait-pr-step # ADD AN ALIAS HERE
         config:
           repoURL: ${{ vars.gitRepo }}
           prNumber: ${{ outputs['open-pr-step'].pr.id }}  # Feeds the PR ID dynamically to the waiter
@@ -82,4 +83,5 @@ spec:
           - name: guestbook-simple-prod
             sources:
             - repoURL: ${{ vars.gitRepo }}
-              desiredRevision: env/prod # Point directly to the target tracking branch now
+              # REFERENCE THE MERGE COMMIT SHA FROM THE WAIT STEP
+              desiredRevision: ${{ outputs['wait-pr-step'].commit }}
